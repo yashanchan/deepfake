@@ -50,16 +50,43 @@ const Index = () => {
     }, 300);
 
     try {
-      // Create FormData for file upload
-      const formData = new FormData();
-      formData.append("file", selectedFile);
+      // 1. First, automatically upload the raw file to Cloudinary
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "deepguard_uploads";
+      
+      if (!cloudName) {
+        throw new Error("Cloudinary Cloud Name is not configured in your Vercel Environment Variables");
+      }
 
-      // TODO: Replace with your actual FastAPI backend URL
+      // Automatically determine if it's an image or video endpoint for Cloudinary
+      const resourceType = selectedFile.type.startsWith('video') ? 'video' : 'image';
+      const cloudinaryEndpoint = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
+
+      const cloudinaryFormData = new FormData();
+      cloudinaryFormData.append("file", selectedFile);
+      cloudinaryFormData.append("upload_preset", uploadPreset);
+
+      const cloudinaryResponse = await fetch(cloudinaryEndpoint, {
+        method: "POST",
+        body: cloudinaryFormData,
+      });
+
+      if (!cloudinaryResponse.ok) {
+        throw new Error("Failed to upload media to Cloudinary. Check your upload preset Name!");
+      }
+
+      const cloudinaryData = await cloudinaryResponse.json();
+      const secureUrl = cloudinaryData.secure_url;
+
+      // 2. Now send purely the URL to your Hugging Face backend as proper JSON
       const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
       
       const response = await fetch(`${API_URL}/analyze`, {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ cloudinary_url: secureUrl }),
       });
 
       if (!response.ok) {
