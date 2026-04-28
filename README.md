@@ -27,7 +27,7 @@ Designed for high-accuracy decision-making:
 - Transformer Encoder: Learns global context and attention weights across processed features to enhance detection against sophisticated GAN and diffusion models.
 - Ensemble Decision: Fuses spatial and temporal signals to produce a final classification of "Real" or "Fake".
 
-![Architecture Diagram](docs/arch_dig.png)
+![Architecture Diagram](docs/architecture.png)
 
 ## Tech Stack
 - Languages: Python, ReactJS
